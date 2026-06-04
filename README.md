@@ -20,13 +20,13 @@ This project does not implement RAO training. It does not compute Eq.3 leave-one
 Use Python 3.10+; Python 3.11 or newer is recommended.
 
 ```bash
-python3 -m pip install -e ".[dev]"
+python3 -m pip install -r requirements.txt
 ```
 
-You can also install from `requirements.txt`:
+Install test dependencies separately when running the suite:
 
 ```bash
-python3 -m pip install -r requirements.txt
+python3 -m pip install -r tests/requirements.txt
 ```
 
 The core runtime depends on Pydantic. Tests use pytest and pytest-asyncio.
@@ -101,7 +101,7 @@ The harness remains provider-agnostic: `RecursiveAgent` depends only on the `Pol
 
 - `run_id`;
 - `root_node_id`;
-- config snapshot;
+- redacted config snapshot;
 - node map;
 - node trajectory;
 - final answer;

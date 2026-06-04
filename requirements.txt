@@ -1,4 +1,2 @@
 pydantic>=2
 PyYAML>=6
-pytest>=8
-pytest-asyncio>=1

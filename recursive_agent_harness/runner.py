@@ -23,7 +23,11 @@ class Runner:
 
     async def arun(self, task: str) -> tuple[NodeResult, ExecutionTree]:
         run_id = f"run_{utc_now_iso().replace(':', '').replace('.', '_')}"
-        tree = ExecutionTree(run_id=run_id, config=self.config.model_dump(mode="json"))
+        tree = ExecutionTree(
+            run_id=run_id,
+            config=self.config.redacted_model_dump(),
+            redactions=self.config.redaction_map(),
+        )
         budget = GlobalBudget(total_node_limit=self.config.total_node_limit)
         root_node_id = budget.allocate_node_id_or_raise()
         root = RecursiveAgent(

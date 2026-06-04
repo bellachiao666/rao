@@ -43,12 +43,19 @@ class TraceNode(BaseModel):
 class ExecutionTree:
     """In-memory execution tree with structured export helpers."""
 
-    def __init__(self, run_id: str = "run", config: dict[str, Any] | None = None, metadata: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        run_id: str = "run",
+        config: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
+        redactions: dict[str, str] | None = None,
+    ):
         self.run_id = run_id
-        self.config = config or {}
+        self._redactions = {secret: replacement for secret, replacement in (redactions or {}).items() if secret}
+        self.config = self._redact_data(config or {})
         self.metadata = {"schema_version": "0.1.0", "created_at": utc_now_iso()}
         if metadata:
-            self.metadata.update(metadata)
+            self.metadata.update(self._redact_data(metadata))
         self.root_node_id: str | None = None
         self.nodes: dict[str, TraceNode] = {}
 
@@ -70,8 +77,8 @@ class ExecutionTree:
             node_id=node_id,
             parent_id=parent_id,
             depth=depth,
-            task=task,
-            metadata=metadata or {},
+            task=self._redact_text(task),
+            metadata=self._redact_data(metadata or {}),
         )
 
     def update_node_status(
@@ -84,9 +91,9 @@ class ExecutionTree:
         node = self.nodes[node_id]
         node.status = NodeStatus(status)
         if error is not None:
-            node.error = error
+            node.error = self._redact_text(error)
         if final_answer is not None:
-            node.final_answer = final_answer
+            node.final_answer = self._redact_text(final_answer)
         if node.status in TERMINAL_STATUSES:
             node.end_time = utc_now_iso()
 
@@ -102,14 +109,14 @@ class ExecutionTree:
         self.nodes[node_id].trajectory.append(
             TrajectoryStep(
                 kind="action",
-                action=action.model_dump(mode="json"),
-                raw_response=raw_response,
-                parse_error=parse_error,
+                action=self._redact_data(action.model_dump(mode="json")),
+                raw_response=self._redact_text(raw_response),
+                parse_error=self._redact_text(parse_error),
             )
         )
 
     def append_observation(self, node_id: str, observation: dict[str, Any]) -> None:
-        self.nodes[node_id].trajectory.append(TrajectoryStep(kind="observation", observation=observation))
+        self.nodes[node_id].trajectory.append(TrajectoryStep(kind="observation", observation=self._redact_data(observation)))
 
     def attach_child(self, parent_id: str, child_id: str) -> None:
         parent = self.nodes.get(parent_id)
@@ -124,13 +131,15 @@ class ExecutionTree:
                 self.update_node_status(node.node_id, status, error=error)
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "run_id": self.run_id,
-            "root_node_id": self.root_node_id,
-            "config": self.config,
-            "nodes": {node_id: node.model_dump(mode="json") for node_id, node in self.nodes.items()},
-            "metadata": self.metadata,
-        }
+        return self._redact_data(
+            {
+                "run_id": self.run_id,
+                "root_node_id": self.root_node_id,
+                "config": self.config,
+                "nodes": {node_id: node.model_dump(mode="json") for node_id, node in self.nodes.items()},
+                "metadata": self.metadata,
+            }
+        )
 
     def export_json(self, path: str | Path) -> None:
         Path(path).write_text(json.dumps(self.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
@@ -175,6 +184,25 @@ class ExecutionTree:
             "depth_histogram": dict(sorted(depth_counts.items())),
             "status_counts": dict(sorted(status_counts.items())),
         }
+
+    def _redact_text(self, text: str | None) -> str | None:
+        if text is None:
+            return None
+        redacted = text
+        for secret, replacement in sorted(self._redactions.items(), key=lambda item: len(item[0]), reverse=True):
+            redacted = redacted.replace(secret, replacement)
+        return redacted
+
+    def _redact_data(self, value: Any) -> Any:
+        if isinstance(value, str):
+            return self._redact_text(value)
+        if isinstance(value, list):
+            return [self._redact_data(item) for item in value]
+        if isinstance(value, tuple):
+            return [self._redact_data(item) for item in value]
+        if isinstance(value, dict):
+            return {key: self._redact_data(item) for key, item in value.items()}
+        return value
 
 
 def _indent(level: int) -> str:

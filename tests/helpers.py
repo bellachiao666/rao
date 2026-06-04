@@ -1,4 +1,5 @@
 from recursive_agent_harness.config import HarnessConfig
+from recursive_agent_harness.tools import ToolRegistry
 
 
 TEST_CONFIG = {
@@ -23,3 +24,25 @@ TEST_CONFIG = {
 
 def make_config(**overrides) -> HarnessConfig:
     return HarnessConfig(**{**TEST_CONFIG, **overrides})
+
+
+def mock_search(arguments: dict) -> list[dict[str, str]]:
+    query = str(arguments.get("query", ""))
+    return [
+        {
+            "title": f"Mock result for {query}",
+            "snippet": f"Deterministic search fixture for {query}.",
+            "url": "mock://search/result",
+        }
+    ]
+
+
+def make_tool_registry_with_mock_search() -> ToolRegistry:
+    registry = ToolRegistry.with_default_tools()
+    registry.register_tool(
+        "mock_search",
+        mock_search,
+        "Deterministic local search fixture for tests.",
+        {"query": "string"},
+    )
+    return registry

@@ -1,4 +1,4 @@
-"""Tool registry and built-in local demo tools."""
+"""Tool registry and built-in local tools."""
 
 from __future__ import annotations
 
@@ -63,12 +63,6 @@ class ToolRegistry:
     def with_default_tools(cls) -> "ToolRegistry":
         registry = cls()
         registry.register_tool(
-            "mock_search",
-            mock_search,
-            "Deterministic local search fixture.",
-            {"query": "string"},
-        )
-        registry.register_tool(
             "calculator",
             calculator,
             "Evaluate a simple arithmetic expression.",
@@ -87,17 +81,6 @@ class ToolRegistry:
             {"code": "string"},
         )
         return registry
-
-
-def mock_search(arguments: dict[str, Any]) -> list[dict[str, str]]:
-    query = str(arguments.get("query", ""))
-    return [
-        {
-            "title": f"Mock result for {query}",
-            "snippet": f"Deterministic search fixture for {query}.",
-            "url": "mock://search/result",
-        }
-    ]
 
 
 def calculator(arguments: dict[str, Any]) -> int | float:

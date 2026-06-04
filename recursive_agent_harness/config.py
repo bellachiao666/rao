@@ -75,3 +75,36 @@ class HarnessConfig(BaseModel):
         with Path(path).open("r", encoding="utf-8") as handle:
             data: dict[str, Any] = yaml.safe_load(handle) or {}
         return cls(**data)
+
+    def redaction_map(self) -> dict[str, str]:
+        redactions: dict[str, str] = {}
+        if self.base_url:
+            redactions[self.base_url] = "[REDACTED_BASE_URL]"
+        if self.api_key:
+            redactions[self.api_key] = "[REDACTED_API_KEY]"
+        return redactions
+
+    def redact_text(self, text: str | None) -> str | None:
+        if text is None:
+            return None
+        redacted = text
+        for secret, replacement in sorted(self.redaction_map().items(), key=lambda item: len(item[0]), reverse=True):
+            redacted = redacted.replace(secret, replacement)
+        return redacted
+
+    def redact_data(self, value: Any) -> Any:
+        if isinstance(value, str):
+            return self.redact_text(value)
+        if isinstance(value, list):
+            return [self.redact_data(item) for item in value]
+        if isinstance(value, tuple):
+            return [self.redact_data(item) for item in value]
+        if isinstance(value, dict):
+            return {key: self.redact_data(item) for key, item in value.items()}
+        return value
+
+    def redacted_model_dump(self) -> dict[str, Any]:
+        data = self.redact_data(self.model_dump(mode="json"))
+        data["base_url"] = "[REDACTED_BASE_URL]" if self.base_url else ""
+        data["api_key"] = "[REDACTED_API_KEY]" if self.api_key else None
+        return data

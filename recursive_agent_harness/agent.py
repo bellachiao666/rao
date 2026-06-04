@@ -254,14 +254,15 @@ class RecursiveAgent:
         return await self.tools.call(action.tool_name or "", action.arguments)
 
     def append_action(self, action: AgentAction) -> None:
-        step = TrajectoryStep(kind="action", action=action.model_dump(mode="json"))
+        step = TrajectoryStep(kind="action", action=self.config.redact_data(action.model_dump(mode="json")))
         self.trajectory.append(step)
         self.tree.append_action(self.node_id, action)
 
     def append_observation(self, observation: dict[str, Any]) -> None:
-        step = TrajectoryStep(kind="observation", observation=observation)
+        redacted_observation = self.config.redact_data(observation)
+        step = TrajectoryStep(kind="observation", observation=redacted_observation)
         self.trajectory.append(step)
-        self.tree.append_observation(self.node_id, observation)
+        self.tree.append_observation(self.node_id, redacted_observation)
 
     def child_summaries(self) -> list[ChildSummary]:
         return [
@@ -269,11 +270,11 @@ class RecursiveAgent:
                 node_id=result.node_id,
                 task=result.task,
                 status=result.status,
-                answer=result.answer,
-                error=result.error,
-                evidence=result.evidence,
-                limitations=result.limitations,
-                metadata=result.metadata,
+                answer=self.config.redact_text(result.answer),
+                error=self.config.redact_text(result.error),
+                evidence=self.config.redact_data(result.evidence),
+                limitations=self.config.redact_data(result.limitations),
+                metadata=self.config.redact_data(result.metadata),
             )
             for result in self.children
         ]
@@ -292,20 +293,21 @@ class RecursiveAgent:
         return fallback_aggregate(summaries, self.task)
 
     def finish(self, answer: str) -> NodeResult:
-        self.final_answer = answer
-        self.tree.update_node_status(self.node_id, self.status, final_answer=answer)
+        redacted_answer = self.config.redact_text(answer) or ""
+        self.final_answer = redacted_answer
+        self.tree.update_node_status(self.node_id, self.status, final_answer=redacted_answer)
         return NodeResult(
             node_id=self.node_id,
-            task=self.task,
+            task=self.config.redact_text(self.task) or "",
             status=self.status,
-            answer=answer,
+            answer=redacted_answer,
             children=self.child_summaries(),
             trajectory=self.trajectory,
-            evidence=self.evidence,
-            limitations=self.limitations if self.status == NodeStatus.COMPLETED else [*self.limitations, self.status.value],
+            evidence=self.config.redact_data(self.evidence),
+            limitations=self.config.redact_data(self.limitations if self.status == NodeStatus.COMPLETED else [*self.limitations, self.status.value]),
             success_signal=None,
             reward=None,
-            metadata={"depth": self.depth},
+            metadata=self.config.redact_data({"depth": self.depth}),
         )
 
 
