@@ -1,0 +1,18 @@
+max_depth: 3
+max_steps_per_node: 12
+max_children_per_node: 6
+total_node_limit: 32
+timeout_seconds: 720
+invalid_action_limit: 2
+max_tool_calls_per_node: 6
+max_parallel_children: 4
+
+model_name: "your-model-name"
+base_url: "https://your-api-base-url"
+api_key: "your-api-key-here"
+temperature: 0.2
+max_tokens: 10000
+
+trace_output_path: "trace.json"
+mermaid_output_path: "trace.mmd"
+log_level: "INFO"
