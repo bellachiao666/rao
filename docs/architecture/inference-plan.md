@@ -337,10 +337,10 @@ tests/
     test_shared_policy.py
 
 README.md
-plan.md
+docs/architecture/inference-plan.md
 ```
 
-说明：`design.md` 中写的是 `init.py`，实际 Python package 入口应使用 `__init__.py`。如果必须完全保留设计文档命名，也可以额外说明 `init.py` 是误写，工程实现应采用标准 `__init__.py`。
+说明：`inference-design.md` 中写的是 `init.py`，实际 Python package 入口应使用 `__init__.py`。如果必须完全保留设计文档命名，也可以额外说明 `init.py` 是误写，工程实现应采用标准 `__init__.py`。
 
 ## 文件职责
 

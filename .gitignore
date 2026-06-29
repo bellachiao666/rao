@@ -15,9 +15,13 @@ env/
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # Testing
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
 htmlcov/
 
@@ -34,3 +38,9 @@ trace.mmd
 
 # Sensitive config (contains API keys)
 config.yaml
+
+# Downloaded datasets
+data/
+
+# Generated training artifacts
+output/

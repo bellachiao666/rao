@@ -32,6 +32,30 @@ def test_state_prompt_disables_delegation_at_depth_limit():
     assert "Return exactly one strict JSON action" in rendered
 
 
+def test_state_prompt_puts_direct_title_result_rule_near_the_action_request():
+    state = AgentState(
+        node_id="node_0001",
+        parent_id=None,
+        task="Identify the exact paper title.",
+        depth=0,
+        max_depth=2,
+        remaining_steps=3,
+        remaining_children=1,
+        trajectory=[],
+        child_summaries=[],
+        available_tools=[{"name": "search_web"}],
+        global_tree_summary={"total_nodes": 1},
+    )
+
+    rendered = render_state_prompt(state)
+
+    assert "DIRECT SEARCH RESULT RULE" in rendered
+    assert '"type":"FINISH"' in rendered
+    assert rendered.index("DIRECT SEARCH RESULT RULE") < rendered.index(
+        "Return exactly one strict JSON action"
+    )
+
+
 def test_system_prompt_and_action_schema_include_recursive_constraints():
     assert "recursive agent execution tree" in SYSTEM_PROMPT
     assert "Do not use a fixed decomposition template" in SYSTEM_PROMPT

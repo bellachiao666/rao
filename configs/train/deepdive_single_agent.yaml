@@ -1,0 +1,34 @@
+experiment:
+  name: deepdive_single_agent
+  seed: 42
+dataset:
+  train_path: data/deepdive_qa_rl.csv
+  eval_count: 50
+model:
+  name: Qwen-3-4B-Instruct-2507
+  train_context_tokens: 40960
+  eval_context_tokens: 262144
+rollout:
+  root_batch_size: 16
+  group_size: 8
+  max_depth: 0
+  max_steps_per_node: 100
+reward:
+  lambda: 0.0
+advantage:
+  type: root_group_leave_one_out
+weighting:
+  type: depth_inverse_frequency
+objective:
+  type: cispo
+  epsilon_low: 0.2
+  epsilon_high: 0.2
+optimizer:
+  backend: areal
+  learning_rate: 0.000003
+checkpoint:
+  output_dir: output/train/deepdive_single_agent
+evaluation:
+  heldout_task_count: 50
+async:
+  enabled: true

@@ -83,3 +83,21 @@ async def test_llm_judge_annotates_execution_tree_success_signal():
     assert tree.nodes["node_0001"].metadata["success_signal"] == 1.0
     assert tree.nodes["node_0002"].metadata["llm_judge"]["success"] is False
     assert tree.nodes["node_0002"].metadata["success_signal"] == 0.0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "response",
+    [
+        '{"reason":"Wrong type.","success":"false"}',
+        '{"reason":"Missing success."}',
+        '{"reason":123,"success":false}',
+        '{"reason":"","success":false}',
+        '[]',
+    ],
+)
+async def test_llm_judge_rejects_invalid_result_types(response):
+    judge = LLMJudge(client=FakeJudgeClient([response]), config=make_config())
+
+    with pytest.raises(ValueError, match="judge (JSON field|response)"):
+        await judge.evaluate_root("task", "truth", "answer")

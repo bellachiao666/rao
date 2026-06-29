@@ -1,0 +1,16 @@
+experiment:
+  name: deepdive_sparse_unweighted
+rollout:
+  root_batch_size: 16
+  group_size: 8
+  max_depth: 4
+  max_steps_per_node: 25
+reward:
+  lambda: 0.2
+  root_provider: root_proxy
+  subtask_provider: root_proxy
+weighting:
+  type: uniform
+objective:
+  epsilon_low: 0.2
+  epsilon_high: 0.2

@@ -56,6 +56,8 @@ class RecursiveAgent:
     invalid_action_count: int = 0
     tool_call_count: int = 0
     step_count: int = 0
+    terminal_reason: str | None = None
+    is_fallback: bool = False
 
     async def run(self) -> NodeResult:
         self.status = NodeStatus.RUNNING
@@ -85,6 +87,8 @@ class RecursiveAgent:
                 self.append_observation({"type": "invalid_action", "error": str(exc)})
                 if self.invalid_action_count >= self.config.invalid_action_limit:
                     self.final_answer = self.best_effort_answer()
+                    self.terminal_reason = "invalid_action_limit"
+                    self.is_fallback = True
                     done = True
                 self.step_count += 1
                 continue
@@ -139,6 +143,8 @@ class RecursiveAgent:
                     self.final_answer = action.answer
                     self.evidence = action.evidence
                     self.limitations = action.limitations
+                self.is_fallback = bool(action.metadata.get("fallback"))
+                self.terminal_reason = "fallback_finish" if self.is_fallback else "finish"
                 done = True
 
             self.step_count += 1
@@ -146,8 +152,11 @@ class RecursiveAgent:
         if not done:
             self.final_answer = self.best_effort_answer()
             self.status = NodeStatus.STEP_LIMITED
+            self.terminal_reason = "step_limit"
+            self.is_fallback = True
         else:
             self.status = NodeStatus.COMPLETED
+            self.terminal_reason = self.terminal_reason or "finish"
 
         return self.finish(self.final_answer or "")
 
@@ -172,6 +181,8 @@ class RecursiveAgent:
         )
 
     def allowed_actions(self, child_summaries: list[ChildSummary]) -> list[str]:
+        if self.draft_answer:
+            return ["FINISH"]
         if self.depth == 0 and child_summaries:
             return ["AGGREGATE", "FINISH"]
         return [
@@ -254,7 +265,17 @@ class RecursiveAgent:
         return await self.tools.call(action.tool_name or "", action.arguments)
 
     def append_action(self, action: AgentAction) -> None:
-        step = TrajectoryStep(kind="action", action=self.config.redact_data(action.model_dump(mode="json")))
+        state_action = action.model_dump(mode="json")
+        metadata = dict(state_action.get("metadata") or {})
+        for key in (
+            "_training_trace",
+            "raw_response",
+            "original_raw_response",
+            "parse_error",
+        ):
+            metadata.pop(key, None)
+        state_action["metadata"] = metadata
+        step = TrajectoryStep(kind="action", action=self.config.redact_data(state_action))
         self.trajectory.append(step)
         self.tree.append_action(self.node_id, action)
 
@@ -295,6 +316,14 @@ class RecursiveAgent:
     def finish(self, answer: str) -> NodeResult:
         redacted_answer = self.config.redact_text(answer) or ""
         self.final_answer = redacted_answer
+        self.tree.update_node_metadata(
+            self.node_id,
+            {
+                "terminal_reason": self.terminal_reason,
+                "is_fallback": self.is_fallback,
+                "is_trainable": not self.is_fallback,
+            },
+        )
         self.tree.update_node_status(self.node_id, self.status, final_answer=redacted_answer)
         return NodeResult(
             node_id=self.node_id,
@@ -307,7 +336,14 @@ class RecursiveAgent:
             limitations=self.config.redact_data(self.limitations if self.status == NodeStatus.COMPLETED else [*self.limitations, self.status.value]),
             success_signal=None,
             reward=None,
-            metadata=self.config.redact_data({"depth": self.depth}),
+            metadata=self.config.redact_data(
+                {
+                    "depth": self.depth,
+                    "terminal_reason": self.terminal_reason,
+                    "is_fallback": self.is_fallback,
+                    "is_trainable": not self.is_fallback,
+                }
+            ),
         )
 
 

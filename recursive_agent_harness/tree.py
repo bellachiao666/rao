@@ -97,6 +97,9 @@ class ExecutionTree:
         if node.status in TERMINAL_STATUSES:
             node.end_time = utc_now_iso()
 
+    def update_node_metadata(self, node_id: str, metadata: dict[str, Any]) -> None:
+        self.nodes[node_id].metadata.update(self._redact_data(metadata))
+
     def append_action(
         self,
         node_id: str,

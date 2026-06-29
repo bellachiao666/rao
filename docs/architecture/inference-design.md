@@ -1,7 +1,7 @@
-请帮我为一个 RAO-style Recursive Agent Inference Harness 项目生成 plan.md。
+请帮我为一个 RAO-style Recursive Agent Inference Harness 项目生成 `inference-plan.md`。
 
-注意：本阶段只生成设计文档 plan.md，不要生成任何代码文件。  
-后续我会基于 plan.md 再让你逐步实现代码。
+注意：本阶段只生成设计文档 `inference-plan.md`，不要生成任何代码文件。  
+后续我会基于 `inference-plan.md` 再让你逐步实现代码。
 
 项目目标：
 
@@ -212,7 +212,7 @@ It optimizes a weighted, multi-task objective over tasks sampled from different 
 - bounded computation：支持 max_depth、max_steps、max_children、total_node_limit、timeout；
 - traceable rollout：完整记录 recursive rollout tree。
 
-请生成一个完整、工程化、可执行的 plan.md，内容需要包括以下部分。
+请生成一个完整、工程化、可执行的 `inference-plan.md`，内容需要包括以下部分。
 
 # 1. 项目定位
 
@@ -339,7 +339,7 @@ tests/
     test_shared_policy.py
 
 README.md
-plan.md
+docs/architecture/inference-plan.md
 
 请解释每个文件职责。
 
@@ -596,7 +596,7 @@ return NodeResult
 
 # 7. Prompt 设计
 
-请在 plan.md 中写出 LLMPolicy 使用的 system prompt 草案。
+请在 `inference-plan.md` 中写出 LLMPolicy 使用的 system prompt 草案。
 
 要求 prompt 明确说明：
 
@@ -717,5 +717,5 @@ Plan a 3-day Kyoto trip in early April for a family. We want cherry blossoms, on
 - local demo first, real LLM later；
 - training hooks should be reserved but not implemented now。
 
-请输出完整的 plan.md 内容，使用 Markdown 格式。
+请输出完整的 `inference-plan.md` 内容，使用 Markdown 格式。
 不要生成代码。

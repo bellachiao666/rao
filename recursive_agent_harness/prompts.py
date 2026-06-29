@@ -18,6 +18,9 @@ RESEARCH STRATEGY:
 - Cross-check important claims across multiple sources when possible.
 - Use available tools deliberately; do not call tools just to create activity.
 - When snippets or short observations are insufficient, use tools that can inspect fuller source content.
+- If a webpage observation has truncated=true, treat it as incomplete and disclose the limitation or find a more precise source.
+- For questions asking for a precise title or name, copy the exact title or name from a relevant search result.
+- If a search result directly answers the task, finish with that exact result instead of continuing to think.
 - Keep intermediate notes concise and use structured observations to organize findings.
 
 DELEGATION STRATEGY:
@@ -177,6 +180,8 @@ def render_state_prompt(state: AgentState) -> str:
             "",
             _aggregation_instruction(state),
             "",
+            _direct_search_result_instruction(state),
+            "",
             "Return exactly one strict JSON action. Do not output markdown or explanatory text.",
         ]
     )
@@ -198,3 +203,18 @@ def _aggregation_instruction(state: AgentState) -> str:
     if state.child_summaries:
         return 'Use the child_summaries to synthesize a final answer. Do not answer generically.'
     return "Use the current task, trajectory, tools, and constraints to choose the next action."
+
+
+def _direct_search_result_instruction(state: AgentState) -> str:
+    normalized_task = state.task.casefold()
+    if "title" not in normalized_task and "name" not in normalized_task:
+        return ""
+    return (
+        "DIRECT SEARCH RESULT RULE: If a recent search_web result title directly "
+        "answers this exact-title or exact-name task, choose FINISH now. Copy the "
+        "matching result title exactly. Do not delegate, search again, or summarize "
+        "the task. Use this shape: "
+        '{"type":"FINISH","reason":"direct search result answers the task",'
+        '"answer":"Exact matching result title","evidence":["result URL"],'
+        '"limitations":[]}'
+    )

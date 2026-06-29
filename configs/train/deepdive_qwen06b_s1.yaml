@@ -1,0 +1,116 @@
+experiment:
+  name: deepdive_qwen06b_s1
+  seed: 42
+  faithful_profile: false
+  action_profile: existing_harness
+
+dataset:
+  train_path: data/deepdive_qa_rl.csv
+  eval_path: data/deepdive_qa_rl.csv
+  split_manifest_path: output/train/deepdive_split.json
+  eval_count: 50
+
+model:
+  name: Qwen3-0.6B
+  path: /datadisk8t/yongxinxiao/models/Qwen/Qwen3-0___6B
+  source: modelscope
+  model_id: Qwen/Qwen3-0.6B
+  revision: master
+  tokenizer_revision: ""
+  train_context_tokens: 8192
+  eval_context_tokens: 16384
+  dtype: bfloat16
+  use_lora: true
+  lora_rank: 8
+  lora_alpha: 16
+
+rollout:
+  root_batch_size: 4
+  group_size: 4
+  max_depth: 2
+  max_steps_per_node: 8
+  temperature: 1.0
+  max_tokens: 512
+  timeout_seconds: 900
+  max_staleness_batches: 3
+  max_concurrent_groups: 1
+
+reward:
+  lambda: 0.2
+  root_provider: llm_judge
+  subtask_provider: llm_judge
+  train_failed_trajectories: true
+
+advantage:
+  type: root_group_leave_one_out
+
+weighting:
+  type: depth_inverse_frequency
+
+objective:
+  type: cispo
+  epsilon_low: 0.2
+  epsilon_high: 0.2
+  kl_coefficient: 0.0
+
+optimizer:
+  backend: torch
+  learning_rate: 0.00003
+  weight_decay: 0.0
+  beta1: 0.9
+  beta2: 0.95
+  grad_clip_norm: 1.0
+  gradient_accumulation_steps: 1
+
+checkpoint:
+  output_dir: /datadisk8t/yongxinxiao/rao-reproduction/qwen06b-s1
+  save_every_steps: 1
+
+evaluation:
+  heldout_task_count: 50
+  every_steps: 10
+
+services:
+  search:
+    provider: duckduckgo
+    endpoint: https://html.duckduckgo.com/html/
+    cache_dir: /datadisk8t/yongxinxiao/rao-reproduction/cache/search
+    timeout_seconds: 30
+    max_retries: 3
+    requests_per_second: 1
+    max_concurrency: 4
+    max_results: 5
+    max_content_bytes: 1000000
+  judge:
+    provider: local_transformers
+    model_id: Qwen/Qwen3-1.7B
+    model_path: /datadisk8t/yongxinxiao/models/Qwen/Qwen3-1___7B
+    revision: master
+    device: cuda:7
+    dtype: bfloat16
+    max_new_tokens: 256
+    max_retries: 2
+    provider_version: qwen3-1.7b-local-judge-v1
+
+async:
+  enabled: false
+  rollout_queue_size: 4
+  verifier_queue_size: 4
+  train_queue_size: 1
+
+sync_flywheel:
+  root_tasks_per_round: 4
+  target_rounds: 75
+  max_collection_attempts: 4
+  ratio_min: 0.95
+  ratio_max: 1.05
+  nonzero_advantage_epsilon: 0.00000001
+
+parameter_sources:
+  model: hardware_adapted_modelscope
+  rollout: hardware_adapted_s1
+  reward.lambda: review_adjusted_delegation_bonus
+  rollout.max_staleness_batches: paper_staleness_reuse
+  optimizer.learning_rate: review_adjusted_8x4090_conservative_lora
+  sync_flywheel.ratio_bounds: paper_clipped_range
+  objective: paper_method

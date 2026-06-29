@@ -1,0 +1,46 @@
+experiment:
+  name: deepdive_areal
+  seed: 42
+  faithful_profile: true
+  action_profile: existing_harness
+dataset:
+  train_path: data/deepdive_qa_rl.csv
+  split_manifest_path: output/train/deepdive_split.json
+  eval_count: 50
+model:
+  name: Qwen-3-4B-Instruct-2507
+  train_context_tokens: 40960
+  eval_context_tokens: 262144
+rollout:
+  root_batch_size: 16
+  group_size: 8
+  max_depth: 4
+  max_steps_per_node: 25
+  max_staleness_batches: 3
+reward:
+  lambda: 0.0
+  root_provider: llm_judge
+  subtask_provider: llm_judge
+advantage:
+  type: root_group_leave_one_out
+weighting:
+  type: depth_inverse_frequency
+objective:
+  type: cispo
+  epsilon_low: 0.2
+  epsilon_high: 0.2
+optimizer:
+  backend: areal
+  learning_rate: 0.000003
+checkpoint:
+  output_dir: output/train/deepdive_areal
+evaluation:
+  heldout_task_count: 50
+async:
+  enabled: true
+parameter_sources:
+  rollout: paper
+  reward.lambda: paper
+  optimizer.learning_rate: paper
+  objective.epsilon_low: implementation_choice
+  objective.epsilon_high: implementation_choice

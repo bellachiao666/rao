@@ -1,0 +1,5 @@
+torch>=2.4,<2.5
+transformers>=4.51,<5
+accelerate>=1,<2
+peft>=0.15,<0.20
+modelscope>=1.37,<2

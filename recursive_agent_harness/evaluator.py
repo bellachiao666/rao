@@ -115,9 +115,17 @@ class LLMJudge:
             max_tokens=self.config.max_tokens,
         )
         parsed = json.loads(completion.content)
+        if not isinstance(parsed, dict):
+            raise ValueError("judge response must be a JSON object")
+        success = parsed.get("success")
+        if not isinstance(success, bool):
+            raise ValueError("judge JSON field 'success' must be boolean")
+        reason = parsed.get("reason")
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValueError("judge JSON field 'reason' must be a non-empty string")
         return EvaluationResult(
-            reason=str(parsed["reason"]),
-            success=bool(parsed["success"]),
+            reason=reason.strip(),
+            success=success,
             scope=scope,
             metadata={"raw_response": completion.content},
         )

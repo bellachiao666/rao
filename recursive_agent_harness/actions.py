@@ -58,6 +58,8 @@ class AgentAction(BaseModel):
             raise ValueError("TOOL_CALL requires tool_name")
         if self.type == ActionType.THINK and not self.thought:
             raise ValueError("THINK requires thought")
+        if self.type != ActionType.TOOL_CALL and self.tool_name:
+            raise ValueError("tool_name requires action type TOOL_CALL")
         if self.type == ActionType.AGGREGATE and not self.instructions:
             raise ValueError("AGGREGATE requires instructions")
         return self

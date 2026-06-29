@@ -1,0 +1,76 @@
+experiment:
+  name: mini_rao
+  seed: 42
+  faithful_profile: false
+  action_profile: existing_harness
+
+dataset:
+  train_path: ""
+  eval_path: ""
+  split_manifest_path: ""
+  eval_count: 1
+
+model:
+  name: toy-causal-lm
+  path: ""
+  train_context_tokens: 4096
+  eval_context_tokens: 4096
+  dtype: float32
+  use_lora: false
+  lora_rank: 8
+  lora_alpha: 16
+
+rollout:
+  root_batch_size: 1
+  group_size: 2
+  max_depth: 2
+  max_steps_per_node: 4
+  temperature: 1.0
+  max_tokens: 256
+  max_staleness_batches: 3
+  max_concurrent_groups: 2
+
+reward:
+  lambda: 0.0
+  root_provider: exact
+  subtask_provider: exact
+  train_failed_trajectories: true
+
+advantage:
+  type: root_group_leave_one_out
+
+weighting:
+  type: depth_inverse_frequency
+
+objective:
+  type: cispo
+  epsilon_low: 0.2
+  epsilon_high: 0.2
+  kl_coefficient: 0.0
+
+optimizer:
+  backend: torch
+  learning_rate: 0.001
+  weight_decay: 0.0
+  beta1: 0.9
+  beta2: 0.95
+  grad_clip_norm: 1.0
+  gradient_accumulation_steps: 1
+
+checkpoint:
+  output_dir: output/train/mini_rao
+  save_every_steps: 1
+
+evaluation:
+  heldout_task_count: 1
+  every_steps: 1
+
+async:
+  enabled: false
+  rollout_queue_size: 8
+  verifier_queue_size: 8
+  train_queue_size: 4
+
+parameter_sources:
+  objective.epsilon_low: implementation_choice
+  objective.epsilon_high: implementation_choice

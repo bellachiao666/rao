@@ -113,6 +113,15 @@ def test_finish_action_requires_answer():
         AgentAction(type=ActionType.FINISH)
 
 
+def test_non_tool_action_rejects_tool_payload():
+    with pytest.raises(ValidationError, match="tool_name"):
+        AgentAction(
+            type=ActionType.THINK,
+            thought="search next",
+            tool_name="search_web",
+        )
+
+
 def test_launch_subagent_requires_subtask():
     subtask = SubtaskSpec(goal="Check crowd risk", expected_output="short assessment")
     action = AgentAction(type=ActionType.LAUNCH_SUBAGENT, subtask=subtask)

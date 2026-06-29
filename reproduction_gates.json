@@ -1,0 +1,138 @@
+{
+  "schema_version": "1.0.0",
+  "last_audited": "2026-06-10",
+  "paper": {
+    "title": "Recursive Agent Optimization",
+    "arxiv": "2605.06639v1",
+    "submitted": "2026-05-07",
+    "url": "https://arxiv.org/abs/2605.06639"
+  },
+  "current_claim_level": "L1_SYNTHETIC_FLYWHEEL",
+  "claim_levels": {
+    "L0_ALGORITHM_COMPONENTS": "Unit-tested RAO equations, schemas, and batch compilation",
+    "L1_SYNTHETIC_FLYWHEEL": "Model-in-the-loop synthetic multi-round training and resume",
+    "L2_DEEPDIVE_SHORT_RUN": "Real DeepDive tools, judge, and at least one optimizer step",
+    "L3_FAITHFUL_75_STEPS": "Faithful DeepDive configuration for at least 75 optimizer steps",
+    "L4_PAPER_EFFECT": "Controlled baselines, ablations, uncertainty, and comparable effect"
+  },
+  "gates": [
+    {
+      "id": "algorithm_core",
+      "priority": "P0",
+      "status": "ready",
+      "evidence": [
+        "recursive_agent_training/rewards.py",
+        "recursive_agent_training/advantages.py",
+        "recursive_agent_training/weighting.py",
+        "recursive_agent_training/objectives/cispo.py",
+        "tests/training/"
+      ],
+      "acceptance": "Equation-level tests pass and a captured batch can be recomputed independently."
+    },
+    {
+      "id": "synthetic_flywheel",
+      "priority": "P0",
+      "status": "ready",
+      "evidence": [
+        "recursive_agent_training/flywheel.py",
+        "recursive_agent_training/hf_flywheel.py",
+        "examples/run_sync_flywheel.py"
+      ],
+      "acceptance": "Two rounds publish different adapter hashes and resume reloads the prior checkpoint."
+    },
+    {
+      "id": "deepdive_dataset_split",
+      "priority": "P0",
+      "status": "partial",
+      "evidence": [
+        "data/deepdive_qa_rl.csv",
+        "recursive_agent_training/datasets.py",
+        "recursive_agent_training/split.py"
+      ],
+      "acceptance": "Dataset hash matches the baseline and a fixed 50-task split manifest is used by train and evaluation."
+    },
+    {
+      "id": "faithful_codeact_runtime",
+      "priority": "P0",
+      "status": "blocked",
+      "evidence": [
+        "recursive_agent_training/codeact/ contains isolated prototypes",
+        "DeepDive configs use action_profile: existing_harness"
+      ],
+      "acceptance": "DeepDive rollout executes Python REPL actions with async launch_subagent and preserves exact action-token logprobs."
+    },
+    {
+      "id": "deepdive_training_entrypoint",
+      "priority": "P0",
+      "status": "blocked",
+      "evidence": [
+        "examples/run_deepdive_rao_training.py raises RuntimeError after preflight"
+      ],
+      "acceptance": "A faithful 16 x 8 tree batch completes collection, judging, compilation, one optimizer step, and publication."
+    },
+    {
+      "id": "search_and_judge_reliability",
+      "priority": "P0",
+      "status": "partial",
+      "evidence": [
+        "recursive_agent_training/domains/deepdive.py",
+        "recursive_agent_training/verifiers/llm.py"
+      ],
+      "acceptance": "Pinned providers support retry, rate limiting, caching, strict schemas, missing-signal quarantine, and cost/failure metrics."
+    },
+    {
+      "id": "distributed_areal_backend",
+      "priority": "P0",
+      "status": "blocked",
+      "evidence": [
+        "recursive_agent_training/optimizers/areal_optimizer.py is a thin optimizer factory wrapper"
+      ],
+      "acceptance": "Eight-GPU distributed rollout and optimization complete with versioning, staleness, checkpoint load, and snapshot publication."
+    },
+    {
+      "id": "long_context_runtime",
+      "priority": "P0",
+      "status": "blocked",
+      "evidence": [
+        "40K and 256K values are present in YAML only"
+      ],
+      "acceptance": "40K train and 256K evaluation execute with audited truncation and action-token/logprob preservation."
+    },
+    {
+      "id": "heldout_evaluation",
+      "priority": "P0",
+      "status": "blocked",
+      "evidence": [
+        "examples/evaluate_rao_checkpoint.py only aggregates existing records"
+      ],
+      "acceptance": "The fixed 50-task split produces per-task records, success, pass@8, bootstrap confidence intervals, and behavior metrics."
+    },
+    {
+      "id": "comparison_matrix",
+      "priority": "P0",
+      "status": "blocked",
+      "evidence": [
+        "No executable four-condition experiment orchestrator"
+      ],
+      "acceptance": "Base/single, trained/single, base/recursive, and trained/recursive are evaluated under identical controls."
+    },
+    {
+      "id": "ablation_matrix",
+      "priority": "P0",
+      "status": "blocked",
+      "evidence": [
+        "Ablation YAML files exist but are not orchestrated"
+      ],
+      "acceptance": "Dense/sparse and weighted/unweighted runs produce a common result table."
+    },
+    {
+      "id": "faithful_run_evidence",
+      "priority": "P0",
+      "status": "blocked",
+      "evidence": [
+        "No 75-step DeepDive evidence package"
+      ],
+      "acceptance": "At least 75 optimizer steps, resumable checkpoints, curves, costs, failures, comparisons, and implementation differences are archived."
+    }
+  ]
+}
